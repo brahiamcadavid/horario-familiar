@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 from datetime import datetime
 
 # Configuración de la página
 st.set_page_config(page_title="Agenda Familiar Brahiam & Marcela", page_icon="📅", layout="wide")
 
-st.title("📅 Centro de Control & Agenda Familiar")
-st.write("Gestiona horarios, transporte automático, tiempo libre y aulas de la familia.")
+st.title("⚡ Centro de Control & Agenda Familiar")
+st.write("Gestiona horarios, transporte automático, tiempo libre y recordatorios de la familia.")
 
 # 1. Base de datos inicial
 if 'agenda' not in st.session_state:
@@ -91,8 +90,8 @@ with st.sidebar:
         nueva_actividad = st.text_input("Actividad / Materia")
         nuevo_lugar = st.text_input("Aula / Sede")
         
-        h_inicio_val = st.number_input("Hora Inicio (24h, ej: 14 p.m.)", min_value=0.0, max_value=23.0, value=8.0, step=0.5)
-        h_fin_val = st.number_input("Hora Fin (24h, ej: 16 p.m.)", min_value=0.5, max_value=24.0, value=10.0, step=0.5)
+        h_inicio_val = st.number_input("Hora Inicio (24h, ej: 14 para 2pm)", min_value=0.0, max_value=23.0, value=8.0, step=0.5)
+        h_fin_val = st.number_input("Hora Fin (24h, ej: 16 para 4pm)", min_value=0.5, max_value=24.0, value=10.0, step=0.5)
         
         btn_guardar = st.form_submit_button("Guardar Actividad")
         
@@ -128,7 +127,7 @@ with col1:
 with col2:
     filtro_dia = st.selectbox("📅 Día de la semana:", ["Todos", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"])
 with col3:
-    tipo_vista = st.selectbox("🎨 Estilo de Visualización:", ["🎴 Tarjetas por Día (Recomendado)", "📊 Cronograma de Barras (Plotly)", "📋 Tabla Detallada"])
+    tipo_vista = st.selectbox("🎨 Estilo de Visualización:", ["📱 Tarjetas Modernas (Glassmorphism)", "📋 Tabla Detallada"])
 
 # Aplicar filtros
 df_view = df_procesado.copy()
@@ -152,70 +151,86 @@ if not df_view.empty and filtro_persona != "Todos":
     m1.metric("📚 Horas en Estudio / Actividad", f"{total_horas:.1f} hrs")
     m2.metric("🌴 Tiempo Libre Estimado (Lun-Vie 16h/día)", f"{libres:.1f} hrs")
 
-# 4. RENDERIZADO DE VISTAS CON DISEÑO Y COLORES
-
-if tipo_vista == "🎴 Tarjetas por Día (Recomendado)":
-    st.subheader("📆 Tarjetero Semanal por Integrante")
+# 4. RENDERIZADO DE TARJETAS ESTILO MODERNO
+if tipo_vista == "📱 Tarjetas Modernas (Glassmorphism)":
+    st.subheader("📆 Tarjetero Semanal Interactivo")
     dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"] if filtro_dia == "Todos" else [filtro_dia]
     cols = st.columns(len(dias_semana))
     
     for i, dia in enumerate(dias_semana):
         with cols[i if len(dias_semana) > 1 else 0]:
-            st.markdown(f"<h4 style='text-align: center; background-color: #1e1e1e; padding: 8px; border-radius: 8px; color: white;'>{dia}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: center; background: linear-gradient(135deg, #1e293b, #0f172a); padding: 10px; border-radius: 12px; font-weight: bold; color: #f8fafc; margin-bottom: 12px; border: 1px solid #334155;'>{dia}</div>", unsafe_allow_html=True)
             df_day = df_view[df_view["Día"] == dia]
             if df_day.empty:
-                st.caption("🟢 Libre")
+                st.caption("🟢 Día Libre")
             else:
                 for _, row in df_day.iterrows():
-                    # Definición de colores distintivos
+                    # ESTILOS MODERNOS Y ULTRA LIMPIOS (Azul para Marcela, Rojo/Neón para Brahiam)
                     if row['Integrante'] == 'Marcela':
-                        bg_color = "#1e3a8a" # Azul oscuro
-                        border_color = "#3b82f6" # Azul brillante
+                        card_style = """
+                            background: linear-gradient(135deg, rgba(30, 58, 138, 0.85), rgba(29, 78, 216, 0.95));
+                            border-left: 6px solid #60a5fa;
+                            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                        """
+                        badge_color = "#93c5fd"
                     elif row['Integrante'] == 'Brahiam':
-                        bg_color = "#831843" # Rojo / Rosado oscuro
-                        border_color = "#ec4899" # Rosa brillante
+                        card_style = """
+                            background: linear-gradient(135deg, rgba(153, 27, 27, 0.85), rgba(220, 38, 38, 0.95));
+                            border-left: 6px solid #fca5a5;
+                            box-shadow: 0 8px 32px 0 rgba(135, 31, 31, 0.37);
+                        """
+                        badge_color = "#fca5a5"
                     else:
-                        bg_color = "#064e3b" # Verde oscuro
-                        border_color = "#10b981" # Verde brillante
+                        card_style = """
+                            background: linear-gradient(135deg, rgba(6, 78, 59, 0.85), rgba(5, 150, 105, 0.95));
+                            border-left: 6px solid #6ee7b7;
+                            box-shadow: 0 8px 32px 0 rgba(31, 135, 80, 0.37);
+                        """
+                        badge_color = "#6ee7b7"
                     
                     st.markdown(f"""
-                    <div style="background-color: {bg_color}; border: 2px solid {border_color}; border-radius: 12px; padding: 12px; margin-bottom: 12px; color: white; box-shadow: 2px 2px 8px rgba(0,0,0,0.3);">
-                        <div style="font-size: 14px; font-weight: bold; color: #f3f4f6;">⏰ {row['Horario']}</div>
-                        <div style="font-size: 16px; font-weight: bold; margin-top: 4px;">👤 {row['Integrante']}</div>
-                        <div style="font-size: 14px; margin-top: 4px;">📖 <em>{row['Actividad']}</em></div>
-                        <div style="font-size: 12px; margin-top: 4px; color: #d1d5db;">📍 {row['Lugar / Aula']}</div>
-                        <hr style="margin: 8px 0; border-color: {border_color}; opacity: 0.5;">
-                        <div style="font-size: 11px;">🚗 <strong>Llevar:</strong> {row['Llevar (🚗)']}</div>
-                        <div style="font-size: 11px;">🚙 <strong>Recoger:</strong> {row['Recoger (🚙)']}</div>
+                    <div style="{card_style} border-radius: 16px; padding: 14px; margin-bottom: 14px; color: white; backdrop-filter: blur(8px);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 13px; font-weight: 700; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 20px; color: {badge_color};">⏰ {row['Horario']}</span>
+                            <span style="font-size: 12px; font-weight: bold; opacity: 0.9;">👤 {row['Integrante']}</span>
+                        </div>
+                        <div style="font-size: 15px; font-weight: 700; margin-top: 10px; line-height: 1.3;">{row['Actividad']}</div>
+                        <div style="font-size: 12px; margin-top: 6px; opacity: 0.9;">📍 {row['Lugar / Aula']}</div>
+                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 11px;">
+                            <div>🚗 <strong>Llevar:</strong> {row['Llevar (🚗)']}</div>
+                            <div style="margin-top: 2px;">🚙 <strong>Recoger:</strong> {row['Recoger (🚙)']}</div>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
 
-elif tipo_vista == "📊 Cronograma de Barras (Plotly)":
-    st.subheader("📊 Cronograma Visual (Plotly)")
-    if not df_view.empty:
-        fig = px.timeline(
-            df_view, 
-            x_start="Inicio_dt", 
-            x_end="Fin_dt", 
-            y="Día", 
-            color="Integrante",
-            hover_data=["Actividad", "Lugar / Aula", "Horario", "Llevar (🚗)", "Recoger (🚙)"],
-            title="Distribución del Tiempo",
-            color_discrete_map={"Brahiam": "#ec4899", "Marcela": "#3b82f6", "Hijo 1": "#10b981"}
-        )
-        fig.update_yaxes(autorange="reversed")
-        st.plotly_chart(fig, use_container_width=True)
-
 elif tipo_vista == "📋 Tabla Detallada":
     st.subheader("📋 Vista en Tabla")
-    def colorear_filas(val):
-        if "Marcela" in str(val):
-            return 'background-color: #d0e1fd; color: #082a63; font-weight: bold;'
-        elif "Brahiam" in str(val):
-            return 'background-color: #fdd0d0; color: #630808; font-weight: bold;'
-        elif "Hijo" in str(val):
-            return 'background-color: #d0fdd7; color: #086317; font-weight: bold;'
-        return ''
-        
     df_tabla = df_view[["Día", "Integrante", "Horario", "Actividad", "Lugar / Aula", "Llevar (🚗)", "Recoger (🚙)"]]
-    st.dataframe(df_tabla.style.map(colorear_filas, subset=['Integrante']), use_container_width=True, hide_index=True)
+    st.dataframe(df_tabla, use_container_width=True, hide_index=True)
+
+# 5. MÓDULO DE RECORDATORIOS POR TELEGRAM
+st.markdown("---")
+st.subheader("🔔 Conectar Recordatorios Automáticos por Telegram")
+
+col_t1, col_t2 = st.columns(2)
+with col_t1:
+    st.markdown("""
+    **Pasos rápidos para activar:**
+    1. Abre Telegram y busca a **`@BotFather`**. Escribe `/newbot` para obtener tu **API Token**.
+    2. Busca a **`@getmyid_bot`** en Telegram y presiona *Start* para ver tu **Chat ID**.
+    3. Llena el formulario de la derecha.
+    """)
+
+with col_t2:
+    with st.form("form_telegram"):
+        api_token = st.text_input("🤖 Telegram Bot API Token:", type="password", placeholder="Ej: 123456789:ABCdefGHI...")
+        chat_id = st.text_input("💬 Tu Telegram Chat ID:", placeholder="Ej: 987654321")
+        btn_telegram = st.form_submit_button("🔔 Activar Notificaciones")
+        
+        if btn_telegram:
+            if api_token and chat_id:
+                st.session_state['telegram_token'] = api_token
+                st.session_state['telegram_chat_id'] = chat_id
+                st.success("¡Excelente! Credenciales guardadas correctamente. Tu app ya está lista para enviar las alertas automáticas a tu celular.")
+            else:
+                st.error("Por favor ingresa tanto el Token como el Chat ID.")
