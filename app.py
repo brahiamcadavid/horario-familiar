@@ -127,7 +127,7 @@ with col1:
 with col2:
     filtro_dia = st.selectbox("📅 Día de la semana:", ["Todos", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"])
 with col3:
-    tipo_vista = st.selectbox("🎨 Estilo de Visualización:", ["📱 Tarjetas Modernas (Glassmorphism)", "📋 Tabla Detallada"])
+    tipo_vista = st.selectbox("🎨 Estilo de Visualización:", ["📱 Tarjetas Modernas (Suaves)", "📋 Tabla Detallada"])
 
 # Aplicar filtros
 df_view = df_procesado.copy()
@@ -151,52 +151,50 @@ if not df_view.empty and filtro_persona != "Todos":
     m1.metric("📚 Horas en Estudio / Actividad", f"{total_horas:.1f} hrs")
     m2.metric("🌴 Tiempo Libre Estimado (Lun-Vie 16h/día)", f"{libres:.1f} hrs")
 
-# 4. RENDERIZADO DE TARJETAS ESTILO MODERNO
-if tipo_vista == "📱 Tarjetas Modernas (Glassmorphism)":
+# 4. RENDERIZADO DE VISTAS
+
+if tipo_vista == "📱 Tarjetas Modernas (Suaves)":
     st.subheader("📆 Tarjetero Semanal Interactivo")
     dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"] if filtro_dia == "Todos" else [filtro_dia]
     cols = st.columns(len(dias_semana))
     
     for i, dia in enumerate(dias_semana):
         with cols[i if len(dias_semana) > 1 else 0]:
-            st.markdown(f"<div style='text-align: center; background: linear-gradient(135deg, #1e293b, #0f172a); padding: 10px; border-radius: 12px; font-weight: bold; color: #f8fafc; margin-bottom: 12px; border: 1px solid #334155;'>{dia}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: center; background: #1e293b; padding: 10px; border-radius: 12px; font-weight: bold; color: #f8fafc; margin-bottom: 12px; border: 1px solid #334155;'>{dia}</div>", unsafe_allow_html=True)
             df_day = df_view[df_view["Día"] == dia]
             if df_day.empty:
                 st.caption("🟢 Día Libre")
             else:
                 for _, row in df_day.iterrows():
-                    # ESTILOS MODERNOS Y ULTRA LIMPIOS (Azul para Marcela, Rojo/Neón para Brahiam)
+                    # TONOS MÁS SUAVES Y MATE
                     if row['Integrante'] == 'Marcela':
                         card_style = """
-                            background: linear-gradient(135deg, rgba(30, 58, 138, 0.85), rgba(29, 78, 216, 0.95));
-                            border-left: 6px solid #60a5fa;
-                            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+                            border-left: 5px solid #60a5fa;
                         """
-                        badge_color = "#93c5fd"
+                        badge_color = "#bfdbfe"
                     elif row['Integrante'] == 'Brahiam':
                         card_style = """
-                            background: linear-gradient(135deg, rgba(153, 27, 27, 0.85), rgba(220, 38, 38, 0.95));
-                            border-left: 6px solid #fca5a5;
-                            box-shadow: 0 8px 32px 0 rgba(135, 31, 31, 0.37);
+                            background: linear-gradient(135deg, #4c1d24, #9f1239);
+                            border-left: 5px solid #f87171;
                         """
-                        badge_color = "#fca5a5"
+                        badge_color = "#fecaca"
                     else:
                         card_style = """
-                            background: linear-gradient(135deg, rgba(6, 78, 59, 0.85), rgba(5, 150, 105, 0.95));
-                            border-left: 6px solid #6ee7b7;
-                            box-shadow: 0 8px 32px 0 rgba(31, 135, 80, 0.37);
+                            background: linear-gradient(135deg, #064e3b, #047857);
+                            border-left: 5px solid #34d399;
                         """
-                        badge_color = "#6ee7b7"
+                        badge_color = "#a7f3d0"
                     
                     st.markdown(f"""
-                    <div style="{card_style} border-radius: 16px; padding: 14px; margin-bottom: 14px; color: white; backdrop-filter: blur(8px);">
+                    <div style="{card_style} border-radius: 14px; padding: 12px; margin-bottom: 12px; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 13px; font-weight: 700; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 20px; color: {badge_color};">⏰ {row['Horario']}</span>
+                            <span style="font-size: 12px; font-weight: 700; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 12px; color: {badge_color};">⏰ {row['Horario']}</span>
                             <span style="font-size: 12px; font-weight: bold; opacity: 0.9;">👤 {row['Integrante']}</span>
                         </div>
-                        <div style="font-size: 15px; font-weight: 700; margin-top: 10px; line-height: 1.3;">{row['Actividad']}</div>
-                        <div style="font-size: 12px; margin-top: 6px; opacity: 0.9;">📍 {row['Lugar / Aula']}</div>
-                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 11px;">
+                        <div style="font-size: 14px; font-weight: 700; margin-top: 8px; line-height: 1.2;">{row['Actividad']}</div>
+                        <div style="font-size: 12px; margin-top: 4px; opacity: 0.85;">📍 {row['Lugar / Aula']}</div>
+                        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.15); font-size: 11px;">
                             <div>🚗 <strong>Llevar:</strong> {row['Llevar (🚗)']}</div>
                             <div style="margin-top: 2px;">🚙 <strong>Recoger:</strong> {row['Recoger (🚙)']}</div>
                         </div>
@@ -204,9 +202,20 @@ if tipo_vista == "📱 Tarjetas Modernas (Glassmorphism)":
                     """, unsafe_allow_html=True)
 
 elif tipo_vista == "📋 Tabla Detallada":
-    st.subheader("📋 Vista en Tabla")
+    st.subheader("📋 Vista en Tabla Detallada")
+    
+    # Función para colorear filas en pastel dentro de la tabla
+    def colorear_filas_suaves(val):
+        if "Marcela" in str(val):
+            return 'background-color: #1e3a5f; color: #bfdbfe; font-weight: bold;'
+        elif "Brahiam" in str(val):
+            return 'background-color: #4c1d24; color: #fecaca; font-weight: bold;'
+        elif "Hijo" in str(val):
+            return 'background-color: #064e3b; color: #a7f3d0; font-weight: bold;'
+        return ''
+        
     df_tabla = df_view[["Día", "Integrante", "Horario", "Actividad", "Lugar / Aula", "Llevar (🚗)", "Recoger (🚙)"]]
-    st.dataframe(df_tabla, use_container_width=True, hide_index=True)
+    st.dataframe(df_tabla.style.map(colorear_filas_suaves, subset=['Integrante']), use_container_width=True, hide_index=True)
 
 # 5. MÓDULO DE RECORDATORIOS POR TELEGRAM
 st.markdown("---")
