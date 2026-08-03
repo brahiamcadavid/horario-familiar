@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo  # Nativo de Python (Sin requerir librerías exter
 # Configuración de la página
 st.set_page_config(page_title="Agenda Familiar Brahiam & Marcela", page_icon="📅", layout="wide")
 
-# 1. RELOJ Y FECHA EN TIEMPO REAL (Uso de zona horaria local)
+# 1. RELOJ Y FECHA EN TIEMPO REAL
 ahora = datetime.now(ZoneInfo("America/Bogota"))
 dias_espanol = {"Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles", "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Sunday": "Domingo"}
 dia_hoy_nombre = dias_espanol.get(ahora.strftime('%A'), ahora.strftime('%A'))
@@ -119,7 +119,7 @@ with st.sidebar:
             
             st.session_state.agenda.append({
                 "id": nuevo_id,
-                "tipo": "dinamica", # Se marca como dinámica/personalizada
+                "tipo": "dinamica",
                 "Día": nuevo_dia,
                 "Integrante": nuevo_integrante,
                 "Hora_Inicio_Num": h_inicio_val,
@@ -135,7 +135,6 @@ with st.sidebar:
     st.markdown("---")
     st.header("🗑️ Gestionar Actividades Creadas")
     
-    # Filtrar solo las actividades de tipo "dinamica"
     actividades_dinamicas = [x for x in st.session_state.agenda if x.get("tipo") == "dinamica"]
     
     if actividades_dinamicas:
@@ -162,7 +161,7 @@ with col1:
 with col2:
     filtro_dia = st.selectbox("📅 Día de la semana:", ["Todos", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"], index=0)
 with col3:
-    tipo_vista = st.selectbox("🎨 Estilo de Visualización:", ["📱 Tarjetas Modernas (Suaves)", "📋 Tabla Detallada"])
+    tipo_vista = st.selectbox("🎨 Estilo de Visualización:", ["📱 Tarjetas Modernas (Bordes & Badges)", "📋 Tabla Detallada"])
 
 # Aplicar filtros
 df_view = df_procesado.copy() if not df_procesado.empty else df_procesado
@@ -185,8 +184,8 @@ if not df_view.empty and filtro_persona != "Todos":
     m1.metric("📚 Horas en Estudio / Actividad", f"{total_horas:.1f} hrs")
     m2.metric("🌴 Tiempo Libre Estimado (Lun-Vie 16h/día)", f"{libres:.1f} hrs")
 
-# 6. RENDERIZADO DE VISTAS
-if tipo_vista == "📱 Tarjetas Modernas (Suaves)":
+# 6. RENDERIZADO DE VISTAS CON DISEÑO MEJORADO
+if tipo_vista == "📱 Tarjetas Modernas (Bordes & Badges)":
     st.subheader("📆 Tarjetero Semanal Interactivo")
     dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"] if filtro_dia == "Todos" else [filtro_dia]
     cols = st.columns(len(dias_semana))
@@ -201,25 +200,29 @@ if tipo_vista == "📱 Tarjetas Modernas (Suaves)":
                 st.caption("🟢 Día Libre")
             else:
                 for _, row in df_day.iterrows():
+                    # CONFIGURACIÓN DE COLORES BASADA EN EL ESTILO DE LA HORA
                     if row['Integrante'] == 'Marcela':
-                        card_style = "background: linear-gradient(135deg, #1e3a5f, #2563eb); border-left: 5px solid #60a5fa;"
-                        badge_color = "#bfdbfe"
+                        card_bg = "background: linear-gradient(135deg, #1e3a5f, #1e40af);"
+                        border_color = "#93c5fd"
+                        badge_bg = "rgba(147, 197, 253, 0.2)"
                     elif row['Integrante'] == 'Brahiam':
-                        card_style = "background: linear-gradient(135deg, #4c1d24, #9f1239); border-left: 5px solid #f87171;"
-                        badge_color = "#fecaca"
+                        card_bg = "background: linear-gradient(135deg, #4c1d24, #9f1239);"
+                        border_color = "#fca5a5"
+                        badge_bg = "rgba(252, 165, 165, 0.2)"
                     else:
-                        card_style = "background: linear-gradient(135deg, #064e3b, #047857); border-left: 5px solid #34d399;"
-                        badge_color = "#a7f3d0"
+                        card_bg = "background: linear-gradient(135deg, #064e3b, #047857);"
+                        border_color = "#6ee7b7"
+                        badge_bg = "rgba(110, 231, 183, 0.2)"
                     
                     st.markdown(f"""
-                    <div style="{card_style} border-radius: 14px; padding: 12px; margin-bottom: 12px; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">
+                    <div style="{card_bg} border: 1.5px solid {border_color}; border-radius: 16px; padding: 14px; margin-bottom: 14px; color: white; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 12px; font-weight: 700; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 12px; color: {badge_color};">⏰ {row['Horario']}</span>
-                            <span style="font-size: 12px; font-weight: bold; opacity: 0.9;">👤 {row['Integrante']}</span>
+                            <span style="font-size: 12px; font-weight: 700; background: {badge_bg}; border: 1px solid {border_color}; padding: 4px 10px; border-radius: 20px; color: {border_color};">⏰ {row['Horario']}</span>
+                            <span style="font-size: 12px; font-weight: bold; opacity: 0.95;">👤 {row['Integrante']}</span>
                         </div>
-                        <div style="font-size: 14px; font-weight: 700; margin-top: 8px; line-height: 1.2;">{row['Actividad']}</div>
-                        <div style="font-size: 12px; margin-top: 4px; opacity: 0.85;">📍 {row['Lugar / Aula']}</div>
-                        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.15); font-size: 11px;">
+                        <div style="font-size: 15px; font-weight: 700; margin-top: 10px; line-height: 1.3;">{row['Actividad']}</div>
+                        <div style="font-size: 12px; margin-top: 6px; opacity: 0.85;">📍 {row['Lugar / Aula']}</div>
+                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 11px;">
                             <div>🚗 <strong>Llevar:</strong> {row['Llevar (🚗)']}</div>
                             <div style="margin-top: 2px;">🚙 <strong>Recoger:</strong> {row['Recoger (🚙)']}</div>
                         </div>
@@ -240,6 +243,8 @@ elif tipo_vista == "📋 Tabla Detallada":
             
         df_tabla = df_view[["Día", "Integrante", "Horario", "Actividad", "Lugar / Aula", "Llevar (🚗)", "Recoger (🚙)"]]
         st.dataframe(df_tabla.style.map(colorear_filas_suaves, subset=['Integrante']), use_container_width=True, hide_index=True)
+    else:
+        st.info("No hay actividades registradas.")
 
 # 7. MÓDULO DE RECORDATORIOS INDIVIDUALES POR TELEGRAM
 st.markdown("---")
