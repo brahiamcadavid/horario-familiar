@@ -1,14 +1,13 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import pytz # Para la hora exacta local
+from zoneinfo import ZoneInfo  # Nativo de Python (Sin requerir librerías externas)
 
 # Configuración de la página
 st.set_page_config(page_title="Agenda Familiar Brahiam & Marcela", page_icon="📅", layout="wide")
 
-# 1. RELOJ Y FECHA EN TIEMPO REAL
-tz = pytz.timezone('America/Bogota') # Zona horaria de Colombia
-ahora = datetime.now(tz)
+# 1. RELOJ Y FECHA EN TIEMPO REAL (Uso de zona horaria local)
+ahora = datetime.now(ZoneInfo("America/Bogota"))
 dias_espanol = {"Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles", "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Sunday": "Domingo"}
 dia_hoy_nombre = dias_espanol.get(ahora.strftime('%A'), ahora.strftime('%A'))
 fecha_actual_str = f"🕒 **Hoy es:** {dia_hoy_nombre}, {ahora.strftime('%d/%m/%Y')} — **Hora:** {ahora.strftime('%I:%M %p')}"
@@ -22,29 +21,29 @@ secret_token = st.secrets.get("TELEGRAM_TOKEN", "")
 secret_id_brahiam = st.secrets.get("CHAT_ID_BRAHIAM", "")
 secret_id_marcela = st.secrets.get("CHAT_ID_MARCELA", "")
 
-# 3. Base de datos inicial en session_state
+# 3. Base de datos inicial en session_state (Protegidas)
 if 'agenda' not in st.session_state:
     st.session_state.agenda = [
         # Lunes
-        {"id": 1, "Día": "Lunes", "Integrante": "Marcela", "Hora_Inicio_Num": 12.0, "Hora_Fin_Num": 16.0, "Hora_Inicio": "2026-08-03 12:00", "Hora_Fin": "2026-08-03 16:00", "Horario": "12:00 PM - 04:00 PM", "Actividad": "Seminario de Investigación / Empatía", "Lugar / Aula": "Aula 14-201 / 6-504"},
-        {"id": 2, "Día": "Lunes", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 22.0, "Hora_Inicio": "2026-08-03 18:00", "Hora_Fin": "2026-08-03 22:00", "Horario": "06:00 PM - 10:00 PM", "Actividad": "Estadística General", "Lugar / Aula": "Colegio Alcaldía-5 (BELÉN)"},
+        {"id": 1, "tipo": "fija", "Día": "Lunes", "Integrante": "Marcela", "Hora_Inicio_Num": 12.0, "Hora_Fin_Num": 16.0, "Hora_Inicio": "2026-08-03 12:00", "Hora_Fin": "2026-08-03 16:00", "Horario": "12:00 PM - 04:00 PM", "Actividad": "Seminario de Investigación / Empatía", "Lugar / Aula": "Aula 14-201 / 6-504"},
+        {"id": 2, "tipo": "fija", "Día": "Lunes", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 22.0, "Hora_Inicio": "2026-08-03 18:00", "Hora_Fin": "2026-08-03 22:00", "Horario": "06:00 PM - 10:00 PM", "Actividad": "Estadística General", "Lugar / Aula": "Colegio Alcaldía-5 (BELÉN)"},
         
         # Martes
-        {"id": 3, "Día": "Martes", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 20.0, "Hora_Inicio": "2026-08-04 18:00", "Hora_Fin": "2026-08-04 20:00", "Horario": "06:00 PM - 08:00 PM", "Actividad": "Física de Campos y Lab.", "Lugar / Aula": "Aula M-106 (FRATERNIDAD)"},
-        {"id": 4, "Día": "Martes", "Integrante": "Brahiam", "Hora_Inicio_Num": 20.0, "Hora_Fin_Num": 22.0, "Hora_Inicio": "2026-08-04 20:00", "Hora_Fin": "2026-08-04 22:00", "Horario": "08:00 PM - 10:00 PM", "Actividad": "Cálculo de Varias Var.", "Lugar / Aula": "Aula Cas-306 (CASTILLA)"},
+        {"id": 3, "tipo": "fija", "Día": "Martes", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 20.0, "Hora_Inicio": "2026-08-04 18:00", "Hora_Fin": "2026-08-04 20:00", "Horario": "06:00 PM - 08:00 PM", "Actividad": "Física de Campos y Lab.", "Lugar / Aula": "Aula M-106 (FRATERNIDAD)"},
+        {"id": 4, "tipo": "fija", "Día": "Martes", "Integrante": "Brahiam", "Hora_Inicio_Num": 20.0, "Hora_Fin_Num": 22.0, "Hora_Inicio": "2026-08-04 20:00", "Hora_Fin": "2026-08-04 22:00", "Horario": "08:00 PM - 10:00 PM", "Actividad": "Cálculo de Varias Var.", "Lugar / Aula": "Aula Cas-306 (CASTILLA)"},
 
         # Miércoles
-        {"id": 5, "Día": "Miércoles", "Integrante": "Marcela", "Hora_Inicio_Num": 6.0, "Hora_Fin_Num": 14.0, "Hora_Inicio": "2026-08-05 06:00", "Hora_Fin": "2026-08-05 14:00", "Horario": "06:00 AM - 02:00 PM", "Actividad": "Taller de Diseño / Higiene", "Lugar / Aula": "Aula 14-201 / 13-304"},
-        {"id": 6, "Día": "Miércoles", "Integrante": "Brahiam", "Hora_Inicio_Num": 14.0, "Hora_Fin_Num": 16.0, "Hora_Inicio": "2026-08-05 14:00", "Hora_Fin": "2026-08-05 16:00", "Horario": "02:00 PM - 04:00 PM", "Actividad": "Electrónica Digital", "Lugar / Aula": "Aula C-204 (ROBLEDO)"},
-        {"id": 7, "Día": "Miércoles", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 20.0, "Hora_Inicio": "2026-08-05 18:00", "Hora_Fin": "2026-08-05 20:00", "Horario": "06:00 PM - 08:00 PM", "Actividad": "Física de Campos y Lab.", "Lugar / Aula": "Aula M-207 (FRATERNIDAD)"},
+        {"id": 5, "tipo": "fija", "Día": "Miércoles", "Integrante": "Marcela", "Hora_Inicio_Num": 6.0, "Hora_Fin_Num": 14.0, "Hora_Inicio": "2026-08-05 06:00", "Hora_Fin": "2026-08-05 14:00", "Horario": "06:00 AM - 02:00 PM", "Actividad": "Taller de Diseño / Higiene", "Lugar / Aula": "Aula 14-201 / 13-304"},
+        {"id": 6, "tipo": "fija", "Día": "Miércoles", "Integrante": "Brahiam", "Hora_Inicio_Num": 14.0, "Hora_Fin_Num": 16.0, "Hora_Inicio": "2026-08-05 14:00", "Hora_Fin": "2026-08-05 16:00", "Horario": "02:00 PM - 04:00 PM", "Actividad": "Electrónica Digital", "Lugar / Aula": "Aula C-204 (ROBLEDO)"},
+        {"id": 7, "tipo": "fija", "Día": "Miércoles", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 20.0, "Hora_Inicio": "2026-08-05 18:00", "Hora_Fin": "2026-08-05 20:00", "Horario": "06:00 PM - 08:00 PM", "Actividad": "Física de Campos y Lab.", "Lugar / Aula": "Aula M-207 (FRATERNIDAD)"},
 
         # Jueves
-        {"id": 8, "Día": "Jueves", "Integrante": "Brahiam", "Hora_Inicio_Num": 20.0, "Hora_Fin_Num": 22.0, "Hora_Inicio": "2026-08-06 20:00", "Hora_Fin": "2026-08-06 22:00", "Horario": "08:00 PM - 10:00 PM", "Actividad": "Cálculo de Varias Var.", "Lugar / Aula": "Aula Cas-306 (CASTILLA)"},
+        {"id": 8, "tipo": "fija", "Día": "Jueves", "Integrante": "Brahiam", "Hora_Inicio_Num": 20.0, "Hora_Fin_Num": 22.0, "Hora_Inicio": "2026-08-06 20:00", "Hora_Fin": "2026-08-06 22:00", "Horario": "08:00 PM - 10:00 PM", "Actividad": "Cálculo de Varias Var.", "Lugar / Aula": "Aula Cas-306 (CASTILLA)"},
 
         # Viernes
-        {"id": 9, "Día": "Viernes", "Integrante": "Marcela", "Hora_Inicio_Num": 10.0, "Hora_Fin_Num": 14.0, "Hora_Inicio": "2026-08-07 10:00", "Hora_Fin": "2026-08-07 14:00", "Horario": "10:00 AM - 02:00 PM", "Actividad": "Seminario Ética / Calidad", "Lugar / Aula": "Aula 13-303 / 8-502"},
-        {"id": 10, "Día": "Viernes", "Integrante": "Brahiam", "Hora_Inicio_Num": 14.0, "Hora_Fin_Num": 16.0, "Hora_Inicio": "2026-08-07 14:00", "Hora_Fin": "2026-08-07 16:00", "Horario": "02:00 PM - 04:00 PM", "Actividad": "Electrónica Digital", "Lugar / Aula": "Aula G-307 (ROBLEDO)"},
-        {"id": 11, "Día": "Viernes", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 20.0, "Hora_Inicio": "2026-08-07 18:00", "Hora_Fin": "2026-08-07 20:00", "Horario": "06:00 PM - 08:00 PM", "Actividad": "Física de Campos y Lab.", "Lugar / Aula": "Aula M-207 (FRATERNIDAD)"}
+        {"id": 9, "tipo": "fija", "Día": "Viernes", "Integrante": "Marcela", "Hora_Inicio_Num": 10.0, "Hora_Fin_Num": 14.0, "Hora_Inicio": "2026-08-07 10:00", "Hora_Fin": "2026-08-07 14:00", "Horario": "10:00 AM - 02:00 PM", "Actividad": "Seminario Ética / Calidad", "Lugar / Aula": "Aula 13-303 / 8-502"},
+        {"id": 10, "tipo": "fija", "Día": "Viernes", "Integrante": "Brahiam", "Hora_Inicio_Num": 14.0, "Hora_Fin_Num": 16.0, "Hora_Inicio": "2026-08-07 14:00", "Hora_Fin": "2026-08-07 16:00", "Horario": "02:00 PM - 04:00 PM", "Actividad": "Electrónica Digital", "Lugar / Aula": "Aula G-307 (ROBLEDO)"},
+        {"id": 11, "tipo": "fija", "Día": "Viernes", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 20.0, "Hora_Inicio": "2026-08-07 18:00", "Hora_Fin": "2026-08-07 20:00", "Horario": "06:00 PM - 08:00 PM", "Actividad": "Física de Campos y Lab.", "Lugar / Aula": "Aula M-207 (FRATERNIDAD)"}
     ]
 
 # 4. MOTOR DE CÁLCULO DE TRANSPORTE AUTOMÁTICO
@@ -95,13 +94,13 @@ def calcular_transporte_automatico(df_total):
     df_total['Recoger (🚙)'] = recoger_list
     return df_total
 
-# 5. PANEL LATERAL: AGREGAR Y ELIMINAR ACTIVIDADES
+# 5. PANEL LATERAL: AGREGAR Y ELIMINAR ACTIVIDADES CREADAS
 with st.sidebar:
     st.header("➕ Agregar Actividad")
     with st.form("form_nueva_actividad"):
         nuevo_integrante = st.selectbox("Integrante", ["Brahiam", "Marcela", "Hijo 1", "Hijo 2", "Familia"])
         nuevo_dia = st.selectbox("Día", ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"])
-        nueva_actividad = st.text_input("Actividad / Materia")
+        nueva_actividad = st.text_input("Actividad / Tarea")
         nuevo_lugar = st.text_input("Aula / Sede")
         
         h_inicio_val = st.number_input("Hora Inicio (24h, ej: 14 para 2pm)", min_value=0.0, max_value=23.0, value=8.0, step=0.5)
@@ -116,11 +115,11 @@ with st.sidebar:
             h_in_dt = datetime.strptime(f"{int(h_inicio_val):02d}:{int((h_inicio_val%1)*60):02d}", "%H:%M")
             h_fi_dt = datetime.strptime(f"{int(h_fin_val):02d}:{int((h_fin_val%1)*60):02d}", "%H:%M")
             
-            # ID único
             nuevo_id = max([x.get("id", 0) for x in st.session_state.agenda], default=0) + 1
             
             st.session_state.agenda.append({
                 "id": nuevo_id,
+                "tipo": "dinamica", # Se marca como dinámica/personalizada
                 "Día": nuevo_dia,
                 "Integrante": nuevo_integrante,
                 "Hora_Inicio_Num": h_inicio_val,
@@ -134,16 +133,22 @@ with st.sidebar:
             st.success(f"¡Guardado para {nuevo_integrante}!")
 
     st.markdown("---")
-    st.header("🗑️ Eliminar Actividades")
-    if st.session_state.agenda:
-        opciones_eliminar = {f"{item['Día']} - {item['Integrante']}: {item['Actividad']} ({item['Horario']})": item.get('id') for item in st.session_state.agenda}
-        seleccion_borrar = st.selectbox("Selecciona la actividad a borrar:", list(opciones_eliminar.keys()))
+    st.header("🗑️ Gestionar Actividades Creadas")
+    
+    # Filtrar solo las actividades de tipo "dinamica"
+    actividades_dinamicas = [x for x in st.session_state.agenda if x.get("tipo") == "dinamica"]
+    
+    if actividades_dinamicas:
+        opciones_eliminar = {f"{item['Día']} - {item['Integrante']}: {item['Actividad']} ({item['Horario']})": item.get('id') for item in actividades_dinamicas}
+        seleccion_borrar = st.selectbox("Selecciona la actividad personalizada a borrar:", list(opciones_eliminar.keys()))
         
-        if st.button("❌ Eliminar Actividad"):
+        if st.button("❌ Eliminar Actividad Seleccionada"):
             id_borrar = opciones_eliminar[seleccion_borrar]
             st.session_state.agenda = [x for x in st.session_state.agenda if x.get('id') != id_borrar]
             st.success("Actividad eliminada con éxito.")
             st.rerun()
+    else:
+        st.caption("🔒 *Las actividades fijas del código están protegidas. Solo aparecerán aquí para borrar las actividades personalizadas que agregues desde la app.*")
 
 # Procesar datos
 df_base = pd.DataFrame(st.session_state.agenda)
@@ -188,7 +193,6 @@ if tipo_vista == "📱 Tarjetas Modernas (Suaves)":
     
     for i, dia in enumerate(dias_semana):
         with cols[i if len(dias_semana) > 1 else 0]:
-            # Resaltar el día de hoy con un borde dorado si coincide
             borde_dia = "border: 2px solid #f59e0b;" if dia == dia_hoy_nombre else "border: 1px solid #334155;"
             st.markdown(f"<div style='text-align: center; background: #1e293b; padding: 10px; border-radius: 12px; font-weight: bold; color: #f8fafc; margin-bottom: 12px; {borde_dia}'>{dia} {'⭐' if dia == dia_hoy_nombre else ''}</div>", unsafe_allow_html=True)
             
@@ -236,8 +240,6 @@ elif tipo_vista == "📋 Tabla Detallada":
             
         df_tabla = df_view[["Día", "Integrante", "Horario", "Actividad", "Lugar / Aula", "Llevar (🚗)", "Recoger (🚙)"]]
         st.dataframe(df_tabla.style.map(colorear_filas_suaves, subset=['Integrante']), use_container_width=True, hide_index=True)
-    else:
-        st.info("No hay actividades registradas.")
 
 # 7. MÓDULO DE RECORDATORIOS INDIVIDUALES POR TELEGRAM
 st.markdown("---")
