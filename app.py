@@ -8,7 +8,12 @@ st.set_page_config(page_title="Agenda Familiar Brahiam & Marcela", page_icon="�
 st.title("⚡ Centro de Control & Agenda Familiar")
 st.write("Gestiona horarios, transporte automático, tiempo libre y recordatorios individuales de la familia.")
 
-# 1. Base de datos inicial
+# 1. Cargar credenciales desde Secrets si existen (para no sobreescribir ni tener conflictos)
+secret_token = st.secrets.get("TELEGRAM_TOKEN", "")
+secret_id_brahiam = st.secrets.get("CHAT_ID_BRAHIAM", "")
+secret_id_marcela = st.secrets.get("CHAT_ID_MARCELA", "")
+
+# 2. Base de datos inicial
 if 'agenda' not in st.session_state:
     st.session_state.agenda = [
         # Lunes
@@ -33,7 +38,7 @@ if 'agenda' not in st.session_state:
         {"Día": "Viernes", "Integrante": "Brahiam", "Hora_Inicio_Num": 18.0, "Hora_Fin_Num": 20.0, "Hora_Inicio": "2026-08-07 18:00", "Hora_Fin": "2026-08-07 20:00", "Horario": "06:00 PM - 08:00 PM", "Actividad": "Física de Campos y Lab.", "Lugar / Aula": "Aula M-207 (FRATERNIDAD)"}
     ]
 
-# 2. MOTOR DE CÁLCULO DE TRANSPORTE AUTOMÁTICO
+# 3. MOTOR DE CÁLCULO DE TRANSPORTE AUTOMÁTICO
 def calcular_transporte_automatico(df_total):
     df_brahiam = df_total[df_total['Integrante'] == 'Brahiam']
     
@@ -81,7 +86,7 @@ def calcular_transporte_automatico(df_total):
     df_total['Recoger (🚙)'] = recoger_list
     return df_total
 
-# 3. Formulario Lateral
+# 4. Formulario Lateral
 with st.sidebar:
     st.header("➕ Agregar Actividad")
     with st.form("form_nueva_actividad"):
@@ -151,7 +156,7 @@ if not df_view.empty and filtro_persona != "Todos":
     m1.metric("📚 Horas en Estudio / Actividad", f"{total_horas:.1f} hrs")
     m2.metric("🌴 Tiempo Libre Estimado (Lun-Vie 16h/día)", f"{libres:.1f} hrs")
 
-# 4. RENDERIZADO DE VISTAS
+# 5. RENDERIZADO DE VISTAS
 
 if tipo_vista == "📱 Tarjetas Modernas (Suaves)":
     st.subheader("📆 Tarjetero Semanal Interactivo")
@@ -215,30 +220,30 @@ elif tipo_vista == "📋 Tabla Detallada":
     df_tabla = df_view[["Día", "Integrante", "Horario", "Actividad", "Lugar / Aula", "Llevar (🚗)", "Recoger (🚙)"]]
     st.dataframe(df_tabla.style.map(colorear_filas_suaves, subset=['Integrante']), use_container_width=True, hide_index=True)
 
-# 5. MÓDULO DE RECORDATORIOS INDIVIDUALES POR TELEGRAM
+# 6. MÓDULO DE RECORDATORIOS INDIVIDUALES POR TELEGRAM
 st.markdown("---")
 st.subheader("🔔 Recordatorios Automáticos Individuales")
 
 st.markdown("""
-Para que cada persona reciba **únicamente sus propias alertas**, ingresa el Chat ID de cada integrante:
+Las credenciales leen automáticamente los **Secrets** de Streamlit. Puedes sobreescribirlas aquí si lo necesitas:
 """)
 
 with st.form("form_telegram_individual"):
     col_a, col_b, col_c = st.columns(3)
     with col_a:
-        api_token = st.text_input("🤖 Telegram Bot Token:", type="password", placeholder="Token de @BotFather")
+        api_token = st.text_input("🤖 Telegram Bot Token:", value=secret_token, type="password")
     with col_b:
-        chat_id_brahiam = st.text_input("💬 Chat ID de Brahiam:", placeholder="Obtenido en @getmyid_bot")
+        chat_id_brahiam = st.text_input("💬 Chat ID de Brahiam:", value=secret_id_brahiam)
     with col_c:
-        chat_id_marcela = st.text_input("💬 Chat ID de Marcela:", placeholder="Obtenido en @getmyid_bot")
+        chat_id_marcela = st.text_input("💬 Chat ID de Marcela:", value=secret_id_marcela)
         
-    btn_telegram = st.form_submit_button("🔔 Activar Notificaciones Individuales")
+    btn_telegram = st.form_submit_button("🔔 Guardar y Probar Alertas")
     
     if btn_telegram:
         if api_token and (chat_id_brahiam or chat_id_marcela):
             st.session_state['telegram_token'] = api_token
             st.session_state['chat_id_brahiam'] = chat_id_brahiam
             st.session_state['chat_id_marcela'] = chat_id_marcela
-            st.success("¡Excelente! Las alertas quedan configuradas para que cada uno reciba únicamente sus mensajes en su celular.")
+            st.success("¡Excelente! Las alertas quedan configuradas sin conflictos.")
         else:
             st.error("Ingresa el Bot Token y al menos un Chat ID.")
