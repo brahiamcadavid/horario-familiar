@@ -6,7 +6,7 @@ from datetime import datetime
 st.set_page_config(page_title="Agenda Familiar Brahiam & Marcela", page_icon="📅", layout="wide")
 
 st.title("⚡ Centro de Control & Agenda Familiar")
-st.write("Gestiona horarios, transporte automático, tiempo libre y recordatorios de la familia.")
+st.write("Gestiona horarios, transporte automático, tiempo libre y recordatorios individuales de la familia.")
 
 # 1. Base de datos inicial
 if 'agenda' not in st.session_state:
@@ -166,7 +166,6 @@ if tipo_vista == "📱 Tarjetas Modernas (Suaves)":
                 st.caption("🟢 Día Libre")
             else:
                 for _, row in df_day.iterrows():
-                    # TONOS MÁS SUAVES Y MATE
                     if row['Integrante'] == 'Marcela':
                         card_style = """
                             background: linear-gradient(135deg, #1e3a5f, #2563eb);
@@ -204,7 +203,6 @@ if tipo_vista == "📱 Tarjetas Modernas (Suaves)":
 elif tipo_vista == "📋 Tabla Detallada":
     st.subheader("📋 Vista en Tabla Detallada")
     
-    # Función para colorear filas en pastel dentro de la tabla
     def colorear_filas_suaves(val):
         if "Marcela" in str(val):
             return 'background-color: #1e3a5f; color: #bfdbfe; font-weight: bold;'
@@ -217,29 +215,30 @@ elif tipo_vista == "📋 Tabla Detallada":
     df_tabla = df_view[["Día", "Integrante", "Horario", "Actividad", "Lugar / Aula", "Llevar (🚗)", "Recoger (🚙)"]]
     st.dataframe(df_tabla.style.map(colorear_filas_suaves, subset=['Integrante']), use_container_width=True, hide_index=True)
 
-# 5. MÓDULO DE RECORDATORIOS POR TELEGRAM
+# 5. MÓDULO DE RECORDATORIOS INDIVIDUALES POR TELEGRAM
 st.markdown("---")
-st.subheader("🔔 Conectar Recordatorios Automáticos por Telegram")
+st.subheader("🔔 Recordatorios Automáticos Individuales")
 
-col_t1, col_t2 = st.columns(2)
-with col_t1:
-    st.markdown("""
-    **Pasos rápidos para activar:**
-    1. Abre Telegram y busca a **`@BotFather`**. Escribe `/newbot` para obtener tu **API Token**.
-    2. Busca a **`@getmyid_bot`** en Telegram y presiona *Start* para ver tu **Chat ID**.
-    3. Llena el formulario de la derecha.
-    """)
+st.markdown("""
+Para que cada persona reciba **únicamente sus propias alertas**, ingresa el Chat ID de cada integrante:
+""")
 
-with col_t2:
-    with st.form("form_telegram"):
-        api_token = st.text_input("🤖 Telegram Bot API Token:", type="password", placeholder="Ej: 123456789:ABCdefGHI...")
-        chat_id = st.text_input("💬 Tu Telegram Chat ID:", placeholder="Ej: 987654321")
-        btn_telegram = st.form_submit_button("🔔 Activar Notificaciones")
+with st.form("form_telegram_individual"):
+    col_a, col_b, col_c = st.columns(3)
+    with col_a:
+        api_token = st.text_input("🤖 Telegram Bot Token:", type="password", placeholder="Token de @BotFather")
+    with col_b:
+        chat_id_brahiam = st.text_input("💬 Chat ID de Brahiam:", placeholder="Obtenido en @getmyid_bot")
+    with col_c:
+        chat_id_marcela = st.text_input("💬 Chat ID de Marcela:", placeholder="Obtenido en @getmyid_bot")
         
-        if btn_telegram:
-            if api_token and chat_id:
-                st.session_state['telegram_token'] = api_token
-                st.session_state['telegram_chat_id'] = chat_id
-                st.success("¡Excelente! Credenciales guardadas correctamente. Tu app ya está lista para enviar las alertas automáticas a tu celular.")
-            else:
-                st.error("Por favor ingresa tanto el Token como el Chat ID.")
+    btn_telegram = st.form_submit_button("🔔 Activar Notificaciones Individuales")
+    
+    if btn_telegram:
+        if api_token and (chat_id_brahiam or chat_id_marcela):
+            st.session_state['telegram_token'] = api_token
+            st.session_state['chat_id_brahiam'] = chat_id_brahiam
+            st.session_state['chat_id_marcela'] = chat_id_marcela
+            st.success("¡Excelente! Las alertas quedan configuradas para que cada uno reciba únicamente sus mensajes en su celular.")
+        else:
+            st.error("Ingresa el Bot Token y al menos un Chat ID.")
