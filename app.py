@@ -822,7 +822,6 @@ def calcular_transporte_automatico(df_total):
       h_fin_pasajero = row["Hora_Fin_Num"]
       clases_b_dia = df_brahiam[df_brahiam["Día"] == dia]
 
-      # Evaluar Llevar
       ocupado_llevar = any(
           c_b["Hora_Inicio_Num"] <= h_inicio_pasajero < c_b["Hora_Fin_Num"]
           for _, c_b in clases_b_dia.iterrows()
@@ -835,7 +834,6 @@ def calcular_transporte_automatico(df_total):
         ).strftime("%I:%M %p")
         llevar_list.append(f"🟢 SÍ ({h_str})")
 
-      # Evaluar Recoger
       ocupado_recoger = any(
           c_b["Hora_Inicio_Num"] <= h_fin_pasajero <= c_b["Hora_Fin_Num"]
           for _, c_b in clases_b_dia.iterrows()
@@ -851,6 +849,44 @@ def calcular_transporte_automatico(df_total):
   df_total["Llevar (🚗)"] = llevar_list
   df_total["Recoger (🚙)"] = recoger_list
   return df_total
+
+
+# Función para calcular franjas horarias desocupadas (06:00 a 22:00)
+def obtener_franjas_libres(df_persona_dia):
+  if df_persona_dia.empty:
+    return ["🟢 Todo el día libre (06:00 AM - 10:00 PM)"]
+
+  # Ordenar ocupaciones por hora de inicio
+  ocupaciones = df_persona_dia.sort_values(by="Hora_Inicio_Num")[
+      ["Hora_Inicio_Num", "Hora_Fin_Num"]
+  ].values.tolist()
+
+  franjas_libres = []
+  inicio_ventana = 6.0  # 06:00 AM
+  fin_ventana = 22.0  # 10:00 PM
+
+  actual = inicio_ventana
+  for h_in, h_fi in ocupaciones:
+    if h_in > actual:
+      franjas_libres.append((actual, min(h_in, fin_ventana)))
+    actual = max(actual, h_fi)
+
+  if actual < fin_ventana:
+    franjas_libres.append((actual, fin_ventana))
+
+  # Formatear a texto comprensible
+  resultado = []
+  for f_in, f_fi in franjas_libres:
+    if f_fi - f_in >= 0.25:  # Mostrar bloques mayores a 15 minutos
+      str_in = datetime.strptime(
+          f"{int(f_in):02d}:{int((f_in%1)*60):02d}", "%H:%M"
+      ).strftime("%I:%M %p")
+      str_fi = datetime.strptime(
+          f"{int(f_fi):02d}:{int((f_fi%1)*60):02d}", "%H:%M"
+      ).strftime("%I:%M %p")
+      resultado.append(f"🟢 {str_in} - {str_fi}")
+
+  return resultado if resultado else ["🔴 Sin franjas libres discontinuas"]
 
 
 # 5. PANEL LATERAL: AGREGAR Y ELIMINAR ACTIVIDADES
@@ -955,16 +991,17 @@ df_procesado = (
     calcular_transporte_automatico(df_base) if not df_base.empty else df_base
 )
 
-# Filtros visuales
-col1, col2, col3 = st.columns(3)
+# 6. CONTROLES Y FILTROS MULTI-SELECCIÓN
+col1, col2, col3 = st.columns([1.5, 1, 1])
 with col1:
-  integrantes_disponibles = (
+  integrantes_disponibles = sorted(
       list(set([x["Integrante"] for x in st.session_state.agenda]))
-      if not df_base.empty
-      else []
   )
-  filtro_persona = st.selectbox(
-      "👤 Integrante:", ["Todos"] + integrantes_disponibles
+  # MULTISELECT: Permite elegir 1, 2, 3 o todos los integrantes
+  filtro_personas = st.multiselect(
+      "👥 Integrantes (Comparativa):",
+      options=integrantes_disponibles,
+      default=integrantes_disponibles,
   )
 with col2:
   filtro_dia = st.selectbox(
@@ -987,11 +1024,14 @@ with col3:
       ["📱 Tarjetas Modernas (Bordes & Badges)", "📋 Tabla Detallada"],
   )
 
-# Aplicar filtros
+# Aplicar Filtros
 df_view = df_procesado.copy() if not df_procesado.empty else df_procesado
 if not df_view.empty:
-  if filtro_persona != "Todos":
-    df_view = df_view[df_view["Integrante"] == filtro_persona]
+  if filtro_personas:
+    df_view = df_view[df_view["Integrante"].isin(filtro_personas)]
+  else:
+    df_view = df_view.iloc[0:0]  # Vacío si no selecciona a nadie
+
   if filtro_dia != "Todos":
     df_view = df_view[df_view["Día"] == filtro_dia]
 
@@ -1003,14 +1043,41 @@ if not df_view.empty:
 
 st.markdown("---")
 
-if not df_view.empty and filtro_persona != "Todos":
-  total_horas = df_view["Horas_Invertidas"].sum()
-  libres = 112 - total_horas
-  m1, m2 = st.columns(2)
-  m1.metric("📚 Horas en Estudio / Actividad", f"{total_horas:.1f} hrs")
-  m2.metric("🌴 Tiempo Libre Estimado (Lun-Vie)", f"{libres:.1f} hrs")
+# 7. CÁLCULO DE HORAS Y FRANJAS DISPONIBLES (6 AM a 10 PM = 16h/día)
+if filtro_personas:
+  # Definición de la ventana de tiempo base
+  dias_conteo = 1 if filtro_dia != "Todos" else 5
+  base_horas_por_persona = 16.0 * dias_conteo
 
-# 6. RENDERIZADO DE VISTAS
+  cols_metrics = st.columns(len(filtro_personas))
+  for idx, persona in enumerate(filtro_personas):
+    df_p = df_view[df_view["Integrante"] == persona]
+    horas_ocupadas = df_p["Horas_Invertidas"].sum() if not df_p.empty else 0.0
+    horas_libres = max(0.0, base_horas_por_persona - horas_ocupadas)
+
+    with cols_metrics[idx]:
+      st.metric(
+          f"👤 {persona} ({filtro_dia})",
+          f"📚 {horas_ocupadas:.1f}h ocupadas",
+          f"🌴 {horas_libres:.1f}h libres (de {base_horas_por_persona:.0f}h)",
+      )
+
+  # Si se selecciona un día específico, mostrar módulo de Franjas Libres
+  if filtro_dia != "Todos":
+    st.markdown("### 🟢 Franjas Horarias Disponibles (Desocupadas)")
+    cols_franjas = st.columns(len(filtro_personas))
+    for idx, persona in enumerate(filtro_personas):
+      df_p_dia = df_view[df_view["Integrante"] == persona]
+      franjas = obtener_franjas_libres(df_p_dia)
+
+      with cols_franjas[idx]:
+        st.markdown(f"**Disponibilidad de {persona}:**")
+        for f in franjas:
+          st.success(f)
+
+st.markdown("---")
+
+# 8. RENDERIZADO DE VISTAS (TARJETAS O TABLA)
 if tipo_vista == "📱 Tarjetas Modernas (Bordes & Badges)":
   st.subheader("📆 Tarjetero Semanal Interactivo")
   dias_semana = (
@@ -1040,7 +1107,7 @@ if tipo_vista == "📱 Tarjetas Modernas (Bordes & Badges)":
           else pd.DataFrame()
       )
       if df_day.empty:
-        st.caption("🟢 Día Libre")
+        st.caption("🟢 Sin actividades")
       else:
         for _, row in df_day.iterrows():
           if row["Integrante"] == "Marcela":
@@ -1101,7 +1168,7 @@ elif tipo_vista == "📋 Tabla Detallada":
     ]]
     st.dataframe(df_tabla, use_container_width=True, hide_index=True)
 
-# 7. MÓDULO Y DISPARADOR DE TELEGRAM
+# 9. MÓDULO DE TELEGRAM
 st.markdown("---")
 st.subheader("🔔 Panel de Alertas y Notificaciones por Telegram")
 
@@ -1146,9 +1213,7 @@ with st.form("form_telegram_individual"):
       if ok_b and ok_m:
         st.success("¡Prueba enviada correctamente a Telegram!")
       else:
-        st.error(
-            "Error enviando la prueba. Verifica el Bot Token y los Chat IDs."
-        )
+        st.error("Error enviando la prueba. Revisa la consola o configuración.")
     else:
       st.error("Ingresa el Bot Token y al menos un Chat ID.")
 
